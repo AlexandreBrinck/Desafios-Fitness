@@ -1,5 +1,6 @@
-<html>
-<body>
-<h2><%= "Hello World!" %></h2>
-</body>
-</html>
+<%--
+  Redireciona a raiz da aplicacao para a Home.
+--%>
+<%
+    response.sendRedirect(request.getContextPath() + "/home");
+%>
