@@ -21,6 +21,26 @@ public class UsuarioService {
         this.usuarioDAO = new UsuarioDAO();
     }
 
+    /**
+     * Regra de autenticacao:
+     * - login e senha obrigatorios
+     * - so libera acesso se existir usuario com esse login/senha
+     */
+    public Usuario autenticar(String login, String senha) {
+        login = this.normalizar(login);
+        senha = this.normalizar(senha);
+
+        if (login == null || senha == null) {
+            throw new IllegalArgumentException("Informe login e senha.");
+        }
+
+        Usuario usuario = this.usuarioDAO.buscarPorLogin(login);
+        if (usuario == null || !usuario.getSenha().equals(senha)) {
+            throw new IllegalArgumentException("Login ou senha inválidos.");
+        }
+        return usuario;
+    }
+
     public List<Usuario> listar() {
         return this.usuarioDAO.listarTodos();
     }
@@ -40,7 +60,7 @@ public class UsuarioService {
      */
     public void salvar(Usuario usuario) {
         if (usuario == null) {
-            throw new IllegalArgumentException("Usuario e obrigatorio.");
+            throw new IllegalArgumentException("Usuário é obrigatório.");
         }
 
         this.prepararDados(usuario);
@@ -54,7 +74,7 @@ public class UsuarioService {
         }
 
         if (this.usuarioDAO.buscarPorId(usuario.getId()) == null) {
-            throw new IllegalArgumentException("Usuario nao encontrado para alteracao.");
+            throw new IllegalArgumentException("Usuário não encontrado para alteração.");
         }
         this.usuarioDAO.alterar(usuario);
     }
@@ -62,10 +82,10 @@ public class UsuarioService {
     // Preparado para a proxima etapa: tela de exclusao de usuarios.
     public void deletar(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("Id e obrigatorio para excluir.");
+            throw new IllegalArgumentException("Id é obrigatório para excluir.");
         }
         if (this.usuarioDAO.buscarPorId(id) == null) {
-            throw new IllegalArgumentException("Usuario nao encontrado.");
+            throw new IllegalArgumentException("Usuário não encontrado.");
         }
         this.usuarioDAO.deletar(id);
     }
@@ -79,22 +99,22 @@ public class UsuarioService {
 
     private void validarCamposObrigatorios(Usuario usuario) {
         if (usuario.getNome() == null) {
-            throw new IllegalArgumentException("Nome e obrigatorio.");
+            throw new IllegalArgumentException("Nome é obrigatório.");
         }
         if (usuario.getLogin() == null) {
-            throw new IllegalArgumentException("Login e obrigatorio.");
+            throw new IllegalArgumentException("Login é obrigatório.");
         }
         if (usuario.getSenha() == null) {
-            throw new IllegalArgumentException("Senha e obrigatoria.");
+            throw new IllegalArgumentException("Senha é obrigatória.");
         }
         if (usuario.getPerfil() == null) {
-            throw new IllegalArgumentException("Perfil e obrigatorio.");
+            throw new IllegalArgumentException("Perfil é obrigatório.");
         }
     }
 
     private void validarSenha(String senha) {
         if (senha.length() < SENHA_MINIMA) {
-            throw new IllegalArgumentException("Senha deve ter no minimo " + SENHA_MINIMA + " caracteres.");
+            throw new IllegalArgumentException("Senha deve ter no mínimo " + SENHA_MINIMA + " caracteres.");
         }
     }
 
@@ -104,10 +124,10 @@ public class UsuarioService {
             return;
         }
         if (usuario.getId() == null) {
-            throw new IllegalArgumentException("Ja existe um usuario com este login.");
+            throw new IllegalArgumentException("Já existe um usuário com este login.");
         }
         if (!existente.getId().equals(usuario.getId())) {
-            throw new IllegalArgumentException("Ja existe um usuario com este login.");
+            throw new IllegalArgumentException("Já existe um usuário com este login.");
         }
     }
 

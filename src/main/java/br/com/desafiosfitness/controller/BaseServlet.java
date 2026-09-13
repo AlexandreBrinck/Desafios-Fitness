@@ -1,11 +1,14 @@
 package br.com.desafiosfitness.controller;
 
+import br.com.desafiosfitness.model.Usuario;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.sql.Date;
 
 /**
  * Base dos controllers.
@@ -36,6 +39,31 @@ public abstract class BaseServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    protected Date paramDate(HttpServletRequest req, String nome) {
+        String valor = req.getParameter(nome);
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return Date.valueOf(valor);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Usuario autenticado na sessao atual, ou null se ninguem estiver logado.
+     * Usado pelas funcionalidades que dependem de "quem esta fazendo a acao"
+     * (criar desafio, participar, registrar progresso).
+     */
+    protected Usuario usuarioLogado(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return null;
+        }
+        return (Usuario) session.getAttribute("usuarioLogado");
     }
 
     protected void forward(HttpServletRequest req, HttpServletResponse resp, String jsp)

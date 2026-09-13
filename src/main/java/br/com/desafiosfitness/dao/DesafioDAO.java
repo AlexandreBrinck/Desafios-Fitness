@@ -8,11 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DAO inicial de Desafio, preparado para a proxima etapa do projeto.
+ * DAO = Data Access Object (acesso ao banco)
  *
- * Nesta etapa so ha consulta (listar/buscar), o suficiente para a estrutura
- * de navegacao existir. inserir/alterar/deletar e as regras de participacao
- * ficam para a proxima etapa, junto com o Controller completo.
+ * Somente SQL. A conversao ResultSet -> {@link Desafio} e feita por
+ * mapearSimples(), herdado de {@link MysqlDAO}.
  */
 public class DesafioDAO extends MysqlDAO {
 
@@ -45,5 +44,54 @@ public class DesafioDAO extends MysqlDAO {
             throw new RuntimeException("Erro ao buscar desafio por id.", e);
         }
         return null;
+    }
+
+    public void inserir(Desafio desafio) {
+        String sql = "INSERT INTO desafios (nome, descricao, tipo_exercicio, meta, data_inicio, data_fim, criador_id) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try {
+            super.executarUpdate(
+                    sql,
+                    desafio.getNome(),
+                    desafio.getDescricao(),
+                    desafio.getTipoExercicio(),
+                    desafio.getMeta(),
+                    desafio.getDataInicio(),
+                    desafio.getDataFim(),
+                    desafio.getCriadorId());
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao inserir desafio.", e);
+        }
+    }
+
+    public void alterar(Desafio desafio) {
+        String sql = "UPDATE desafios SET nome = ?, descricao = ?, tipo_exercicio = ?, meta = ?, "
+                + "data_inicio = ?, data_fim = ? WHERE id = ?";
+        try {
+            super.executarUpdate(
+                    sql,
+                    desafio.getNome(),
+                    desafio.getDescricao(),
+                    desafio.getTipoExercicio(),
+                    desafio.getMeta(),
+                    desafio.getDataInicio(),
+                    desafio.getDataFim(),
+                    desafio.getId());
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao alterar desafio.", e);
+        }
+    }
+
+    /**
+     * Exclui o desafio. Participacoes e registros de progresso relacionados
+     * sao removidos automaticamente pelo banco (ON DELETE CASCADE no init.sql).
+     */
+    public void deletar(Long id) {
+        String sql = "DELETE FROM desafios WHERE id = ?";
+        try {
+            super.executarUpdate(sql, id);
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao deletar desafio.", e);
+        }
     }
 }

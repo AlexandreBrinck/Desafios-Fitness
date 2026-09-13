@@ -5,7 +5,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Novo usuário - Desafios Fitness</title>
+    <title>
+        <c:choose>
+            <c:when test="${empty desafio.id}">Novo desafio</c:when>
+            <c:otherwise>Editar desafio</c:otherwise>
+        </c:choose>
+        - Desafios Fitness
+    </title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilo.css">
 </head>
 <body>
@@ -35,7 +41,12 @@
 
 <main class="container">
     <div class="page-header">
-        <h1>Novo usuário</h1>
+        <h1>
+            <c:choose>
+                <c:when test="${empty desafio.id}">Novo desafio</c:when>
+                <c:otherwise>Editar desafio</c:otherwise>
+            </c:choose>
+        </h1>
     </div>
 
     <div class="card">
@@ -43,34 +54,43 @@
             <div class="alert alert-erro">${erro}</div>
         </c:if>
 
-        <form method="post" action="${pageContext.request.contextPath}/usuarios">
+        <form method="post" action="${pageContext.request.contextPath}/desafios">
+            <input type="hidden" name="id" value="${desafio.id}">
+
             <div class="form-group">
                 <label for="nome">Nome</label>
-                <input type="text" id="nome" name="nome" value="${usuario.nome}" required>
+                <input type="text" id="nome" name="nome" value="${desafio.nome}" required>
             </div>
 
             <div class="form-group">
-                <label for="login">Login</label>
-                <input type="text" id="login" name="login" value="${usuario.login}" required>
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" name="descricao" rows="3">${desafio.descricao}</textarea>
             </div>
 
             <div class="form-group">
-                <label for="senha">Senha</label>
-                <input type="text" id="senha" name="senha" value="${usuario.senha}" required>
+                <label for="tipoExercicio">Tipo de exercício</label>
+                <input type="text" id="tipoExercicio" name="tipoExercicio" value="${desafio.tipoExercicio}"
+                       placeholder="Ex.: Corrida, Musculação, Natação" required>
             </div>
 
             <div class="form-group">
-                <label for="perfil">Perfil</label>
-                <select id="perfil" name="perfil" required>
-                    <option value="">Selecione</option>
-                    <option value="Administrador" <c:if test="${usuario.perfil == 'Administrador'}">selected</c:if>>Administrador</option>
-                    <option value="Participante" <c:if test="${usuario.perfil == 'Participante'}">selected</c:if>>Participante</option>
-                </select>
+                <label for="meta">Meta</label>
+                <input type="text" id="meta" name="meta" value="${desafio.meta}" placeholder="Ex.: 50 km no mês">
+            </div>
+
+            <div class="form-group">
+                <label for="dataInicio">Data de início</label>
+                <input type="date" id="dataInicio" name="dataInicio" value="${desafio.dataInicio}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="dataFim">Data de fim</label>
+                <input type="date" id="dataFim" name="dataFim" value="${desafio.dataFim}">
             </div>
 
             <div class="actions">
                 <button type="submit" class="btn">Salvar</button>
-                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/usuarios">Cancelar</a>
+                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/desafios">Cancelar</a>
             </div>
         </form>
     </div>

@@ -28,7 +28,7 @@ public class UsuarioDAO extends MysqlDAO {
                 lista.add(super.mapearSimples(rs, Usuario.class));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao listar usuarios.", e);
+            throw new RuntimeException("Erro ao listar usuários.", e);
         }
         return lista;
     }
@@ -40,7 +40,7 @@ public class UsuarioDAO extends MysqlDAO {
                 return super.mapearSimples(rs, Usuario.class);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuario por id.", e);
+            throw new RuntimeException("Erro ao buscar usuário por id.", e);
         }
         return null;
     }
@@ -52,7 +52,7 @@ public class UsuarioDAO extends MysqlDAO {
                 return super.mapearSimples(rs, Usuario.class);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao buscar usuario por login.", e);
+            throw new RuntimeException("Erro ao buscar usuário por login.", e);
         }
         return null;
     }
@@ -67,7 +67,7 @@ public class UsuarioDAO extends MysqlDAO {
                     usuario.getSenha(),
                     usuario.getPerfil());
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao inserir usuario.", e);
+            throw new RuntimeException("Erro ao inserir usuário.", e);
         }
     }
 
@@ -83,7 +83,7 @@ public class UsuarioDAO extends MysqlDAO {
                     usuario.getPerfil(),
                     usuario.getId());
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao alterar usuario.", e);
+            throw new RuntimeException("Erro ao alterar usuário.", e);
         }
     }
 
@@ -93,7 +93,7 @@ public class UsuarioDAO extends MysqlDAO {
         try {
             super.executarUpdate(sql, id);
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao deletar usuario.", e);
+            throw new RuntimeException("Erro ao deletar usuário.", e);
         }
     }
 }

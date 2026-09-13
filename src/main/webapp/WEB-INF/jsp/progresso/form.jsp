@@ -5,7 +5,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Novo usuário - Desafios Fitness</title>
+    <title>
+        <c:choose>
+            <c:when test="${empty progresso.id}">Registrar progresso</c:when>
+            <c:otherwise>Editar progresso</c:otherwise>
+        </c:choose>
+        - Desafios Fitness
+    </title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilo.css">
 </head>
 <body>
@@ -35,42 +41,43 @@
 
 <main class="container">
     <div class="page-header">
-        <h1>Novo usuário</h1>
+        <h1>
+            <c:choose>
+                <c:when test="${empty progresso.id}">Registrar progresso</c:when>
+                <c:otherwise>Editar progresso</c:otherwise>
+            </c:choose>
+        </h1>
     </div>
+    <p class="subtitulo">Desafio: ${desafio.nome}</p>
 
     <div class="card">
         <c:if test="${not empty erro}">
             <div class="alert alert-erro">${erro}</div>
         </c:if>
 
-        <form method="post" action="${pageContext.request.contextPath}/usuarios">
+        <form method="post" action="${pageContext.request.contextPath}/progresso">
+            <input type="hidden" name="id" value="${progresso.id}">
+            <input type="hidden" name="desafioId" value="${desafio.id}">
+
             <div class="form-group">
-                <label for="nome">Nome</label>
-                <input type="text" id="nome" name="nome" value="${usuario.nome}" required>
+                <label for="dataRegistro">Data</label>
+                <input type="date" id="dataRegistro" name="dataRegistro" value="${progresso.dataRegistro}" required>
             </div>
 
             <div class="form-group">
-                <label for="login">Login</label>
-                <input type="text" id="login" name="login" value="${usuario.login}" required>
+                <label for="valorAtingido">Valor atingido</label>
+                <input type="text" id="valorAtingido" name="valorAtingido" value="${progresso.valorAtingido}"
+                       placeholder="Ex.: 5 km, 30 minutos" required>
             </div>
 
             <div class="form-group">
-                <label for="senha">Senha</label>
-                <input type="text" id="senha" name="senha" value="${usuario.senha}" required>
-            </div>
-
-            <div class="form-group">
-                <label for="perfil">Perfil</label>
-                <select id="perfil" name="perfil" required>
-                    <option value="">Selecione</option>
-                    <option value="Administrador" <c:if test="${usuario.perfil == 'Administrador'}">selected</c:if>>Administrador</option>
-                    <option value="Participante" <c:if test="${usuario.perfil == 'Participante'}">selected</c:if>>Participante</option>
-                </select>
+                <label for="observacao">Observação</label>
+                <textarea id="observacao" name="observacao" rows="3">${progresso.observacao}</textarea>
             </div>
 
             <div class="actions">
                 <button type="submit" class="btn">Salvar</button>
-                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/usuarios">Cancelar</a>
+                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/progresso">Cancelar</a>
             </div>
         </form>
     </div>

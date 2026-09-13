@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Usuarios - Desafios Fitness</title>
+    <title>Usuários - Desafios Fitness</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilo.css">
 </head>
 <body>
@@ -14,16 +14,29 @@
         <strong>Desafios Fitness</strong>
         <nav>
             <a href="${pageContext.request.contextPath}/home">Home</a>
-            <a href="${pageContext.request.contextPath}/usuarios">Usuarios</a>
+            <a href="${pageContext.request.contextPath}/usuarios">Usuários</a>
             <a href="${pageContext.request.contextPath}/desafios">Desafios</a>
+            <c:if test="${not empty sessionScope.usuarioLogado}">
+                <a href="${pageContext.request.contextPath}/desafios?acao=meus">Meus Desafios</a>
+                <a href="${pageContext.request.contextPath}/progresso">Progresso</a>
+            </c:if>
+            <c:choose>
+                <c:when test="${not empty sessionScope.usuarioLogado}">
+                    <span>Olá, ${sessionScope.usuarioLogado.nome}</span>
+                    <a href="${pageContext.request.contextPath}/logout">Sair</a>
+                </c:when>
+                <c:otherwise>
+                    <a href="${pageContext.request.contextPath}/login">Entrar</a>
+                </c:otherwise>
+            </c:choose>
         </nav>
     </div>
 </header>
 
 <main class="container">
     <div class="page-header">
-        <h1>Usuarios</h1>
-        <a class="btn" href="${pageContext.request.contextPath}/usuarios?acao=novo">Novo usuario</a>
+        <h1>Usuários</h1>
+        <a class="btn" href="${pageContext.request.contextPath}/usuarios?acao=novo">Novo usuário</a>
     </div>
 
     <c:if test="${not empty erro}">
@@ -33,7 +46,7 @@
     <div class="table-wrap">
         <c:choose>
             <c:when test="${empty usuarios}">
-                <p class="empty">Nenhum usuario cadastrado.</p>
+                <p class="empty">Nenhum usuário cadastrado.</p>
             </c:when>
             <c:otherwise>
                 <table>

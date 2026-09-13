@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Desafios - Desafios Fitness</title>
+    <title>Progresso - Desafios Fitness</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/css/estilo.css">
 </head>
 <body>
@@ -37,12 +37,12 @@
     <div class="page-header">
         <h1>
             <c:choose>
-                <c:when test="${meusDesafios}">Meus desafios</c:when>
-                <c:otherwise>Desafios</c:otherwise>
+                <c:when test="${porDesafio}">Progresso do desafio: ${desafio.nome}</c:when>
+                <c:otherwise>Meu progresso</c:otherwise>
             </c:choose>
         </h1>
-        <c:if test="${not empty sessionScope.usuarioLogado}">
-            <a class="btn" href="${pageContext.request.contextPath}/desafios?acao=novo">Novo desafio</a>
+        <c:if test="${porDesafio}">
+            <a class="btn btn-secondary" href="${pageContext.request.contextPath}/desafios?acao=visualizar&id=${desafio.id}">Voltar ao desafio</a>
         </c:if>
     </div>
 
@@ -52,42 +52,42 @@
 
     <div class="table-wrap">
         <c:choose>
-            <c:when test="${empty desafios}">
-                <p class="empty">
-                    <c:choose>
-                        <c:when test="${meusDesafios}">Você ainda não participa de nenhum desafio.</c:when>
-                        <c:otherwise>Nenhum desafio cadastrado ainda.</c:otherwise>
-                    </c:choose>
-                </p>
+            <c:when test="${empty registros}">
+                <p class="empty">Nenhum registro de progresso ainda.</p>
             </c:when>
             <c:otherwise>
                 <table>
                     <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>Tipo de exercício</th>
-                        <th>Meta</th>
-                        <th>Período</th>
-                        <th>Criador</th>
-                        <th>Ações</th>
+                        <th>Data</th>
+                        <c:if test="${not porDesafio}">
+                            <th>Desafio</th>
+                        </c:if>
+                        <th>Valor atingido</th>
+                        <th>Observação</th>
+                        <c:if test="${not porDesafio}">
+                            <th>Ações</th>
+                        </c:if>
                     </tr>
                     </thead>
                     <tbody>
-                    <c:forEach var="desafio" items="${desafios}">
+                    <c:forEach var="registro" items="${registros}">
                         <tr>
-                            <td>${desafio.nome}</td>
-                            <td>${desafio.tipoExercicio}</td>
-                            <td>${desafio.meta}</td>
-                            <td>${desafio.dataInicio} a ${desafio.dataFim}</td>
-                            <td>${usuarios[desafio.criadorId].nome}</td>
-                            <td>
-                                <span class="links-inline">
-                                    <a href="${pageContext.request.contextPath}/desafios?acao=visualizar&id=${desafio.id}">Ver</a>
-                                    <c:if test="${meusDesafios}">
-                                        <a href="${pageContext.request.contextPath}/progresso?acao=novo&desafioId=${desafio.id}">Registrar progresso</a>
-                                    </c:if>
-                                </span>
-                            </td>
+                            <td>${registro.dataRegistro}</td>
+                            <c:if test="${not porDesafio}">
+                                <td>${desafios[registro.desafioId].nome}</td>
+                            </c:if>
+                            <td>${registro.valorAtingido}</td>
+                            <td>${registro.observacao}</td>
+                            <c:if test="${not porDesafio}">
+                                <td>
+                                    <span class="links-inline">
+                                        <a href="${pageContext.request.contextPath}/progresso?acao=editar&id=${registro.id}">Editar</a>
+                                        <a href="${pageContext.request.contextPath}/progresso?acao=excluir&id=${registro.id}"
+                                           onclick="return confirm('Excluir este registro de progresso?');">Excluir</a>
+                                    </span>
+                                </td>
+                            </c:if>
                         </tr>
                     </c:forEach>
                     </tbody>

@@ -13,7 +13,7 @@ import java.sql.SQLException;
 public class MysqlSingleton {
 
     private static final String URL =
-            "jdbc:mysql://mysql:3306/desafios_fitness?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+            "jdbc:mysql://localhost:3306/desafios_fitness?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     private static final String USER = "desafios_user";
     private static final String PASSWORD = "desafios123";
 
@@ -24,7 +24,7 @@ public class MysqlSingleton {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Driver MySQL nao encontrado no projeto.", e);
+            throw new RuntimeException("Driver MySQL não encontrado no projeto.", e);
         }
     }
 
