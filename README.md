@@ -148,7 +148,7 @@ nessa URL antes de compilar — esse é o nome do serviço MySQL no `docker-comp
 
 ## Como executar
 
-### Opção 1 — MySQL e Tomcat instalados localmente (padrão atual)
+### Opção 1 — MySQL e Tomcat instalados localmente 
 
 1. Crie o banco rodando o script `init.sql` num MySQL/MariaDB local
    (ex.: `mysql -u root < init.sql`).
@@ -162,42 +162,21 @@ nessa URL antes de compilar — esse é o nome do serviço MySQL no `docker-comp
 4. Copie `deploy/desafios-fitness.war` para a pasta `webapps` do Tomcat 10.1.
 5. Inicie o Tomcat e acesse `http://localhost:8080/desafios-fitness`.
 
-### Opção 2 — Docker
+### Opção 2 — Docker (recomendada)
 
-1. Ajuste a URL em `MysqlSingleton.java` para usar `mysql` no lugar de `localhost`
-   (nome do serviço MySQL no `docker-compose.yml`).
-2. Gere o WAR: `mvn clean package` (o WAR é gerado em `deploy/desafios-fitness.war`,
-   pasta já mapeada pelo `docker-compose.yml`).
-3. Suba os containers: `docker compose up -d`.
-4. Acesse: [http://localhost:8080/desafios-fitness](http://localhost:8080/desafios-fitness)
+1. Clone o repositório.
+2. Entre na pasta do projeto.
+3. Execute `docker compose up -d`.
+4. Acesse `http://localhost:8080/desafios-fitness/home`.
 
-O MySQL sobe na porta `3306` e o `init.sql` é executado automaticamente na primeira
-inicialização do container (criação do banco, tabelas e dados de exemplo).
+O projeto já possui o WAR em `deploy/desafios-fitness.war`, portanto não é necessário instalar Java, Maven, Tomcat ou MySQL separadamente para executar a versão Dockerizada.
 
-## Rotas
+O `docker-compose.yml` sobe automaticamente:
+- MySQL 8.4;
+- Tomcat 10.1 com JDK 21;
+- banco `desafios_fitness`;
+- tabelas e dados iniciais através do `init.sql`.
 
-| Rota                                          | Método | Ação                                                          | Login |
-|------------------------------------------------|--------|----------------------------------------------------------------|:-----:|
-| `/home`                                         | GET    | Painel inicial                                                  |  não  |
-| `/login`                                        | GET/POST | Formulário e autenticação                                     |  não  |
-| `/logout`                                       | GET    | Encerra a sessão                                                |  sim  |
-| `/usuarios`                                     | GET    | Lista os usuários cadastrados                                   |  não  |
-| `/usuarios?acao=novo`                           | GET    | Formulário de cadastro de usuário                               |  não  |
-| `/usuarios`                                     | POST   | Salva um novo usuário                                           |  não  |
-| `/desafios`                                     | GET    | Lista todos os desafios                                         |  não  |
-| `/desafios?acao=visualizar&id=`                 | GET    | Detalhes do desafio, participantes e ações disponíveis          |  não  |
-| `/desafios?acao=meus`                           | GET    | Desafios dos quais o usuário logado participa                   |  sim  |
-| `/desafios?acao=novo`                           | GET    | Formulário de novo desafio                                       |  sim  |
-| `/desafios?acao=editar&id=`                     | GET    | Formulário de edição (somente o criador)                        |  sim  |
-| `/desafios`                                     | POST   | Salva (cria ou edita) um desafio                                 |  sim  |
-| `/desafios?acao=excluir&id=`                    | GET    | Exclui o desafio (somente o criador; cascade no banco)           |  sim  |
-| `/desafios?acao=participar&id=`                 | GET    | Usuário logado passa a participar do desafio                     |  sim  |
-| `/progresso`                                    | GET    | Lista o progresso do usuário logado                              |  sim  |
-| `/progresso?acao=novo&desafioId=`               | GET    | Formulário de registro de progresso                              |  sim  |
-| `/progresso?acao=editar&id=`                    | GET    | Formulário de edição (somente quem registrou)                    |  sim  |
-| `/progresso`                                    | POST   | Salva (cria ou edita) um registro de progresso                   |  sim  |
-| `/progresso?acao=excluir&id=`                   | GET    | Exclui o registro (somente quem registrou)                       |  sim  |
-| `/progresso?acao=porDesafio&desafioId=`         | GET    | Lista todos os registros de progresso de um desafio              |  sim  |
 
 ## Regras de negócio (camada Service)
 
