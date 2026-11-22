@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Singleton responsavel pela conexao com o MySQL.
@@ -58,6 +59,23 @@ public class MysqlSingleton {
                 ps.setObject(i + 1, parametros[i]);
             }
             return ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Executa um INSERT e devolve a chave primaria gerada pelo banco
+     * (AUTO_INCREMENT), ou null se o banco nao gerar nenhuma.
+     */
+    public Long executarInsert(String sql, Object... parametros) throws SQLException {
+        Connection conn = this.obterConexao();
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            for (int i = 0; i < parametros.length; i++) {
+                ps.setObject(i + 1, parametros[i]);
+            }
+            ps.executeUpdate();
+            try (ResultSet chaves = ps.getGeneratedKeys()) {
+                return chaves.next() ? chaves.getLong(1) : null;
+            }
         }
     }
 }

@@ -178,6 +178,54 @@ O `docker-compose.yml` sobe automaticamente:
 - tabelas e dados iniciais através do `init.sql`.
 
 
+## API REST de Desafios (Parte 2)
+
+Controller: `controller/api/DesafioApiServlet.java` (`@WebServlet("/api/desafios/*")`).
+Usa o mesmo `DesafioService` do site — sem regra de negócio no controller — e
+responde sempre em JSON (Gson). Base: `http://localhost:8080/desafios-fitness`.
+
+| Método | Rota                  | Ação           | Login | Sucesso |
+|--------|-----------------------|----------------|:-----:|:-------:|
+| GET    | `/api/desafios`       | Lista todos    |  não  |   200   |
+| GET    | `/api/desafios/{id}`  | Busca por id   |  não  |   200   |
+| POST   | `/api/desafios`       | Cadastra       |  sim  |   201   |
+| PUT    | `/api/desafios/{id}`  | Atualiza       |  sim (criador) | 200 |
+| DELETE | `/api/desafios/{id}`  | Exclui         |  sim (criador) | 200 |
+
+**Autenticação**: a API reaproveita a sessão do site. No Postman, faça
+`POST /login` com corpo `x-www-form-urlencoded` (`login`, `senha`); o cookie
+`JSESSIONID` é guardado e enviado automaticamente nas requisições seguintes.
+
+**Corpo (POST/PUT)** — `Content-Type: application/json`, datas em `yyyy-MM-dd`:
+
+```json
+{
+  "nome": "Pedalada 100km",
+  "descricao": "Acumular 100 km de bike",
+  "tipoExercicio": "Ciclismo",
+  "meta": "100 km",
+  "dataInicio": "2026-12-01",
+  "dataFim": "2026-12-31"
+}
+```
+
+O PUT substitui todos os campos (campos opcionais omitidos ficam `null`).
+O `criadorId` nunca vem do corpo: é sempre o usuário logado.
+
+**Formato das respostas**:
+
+```json
+{"sucesso": true, "mensagem": "Desafio atualizado com sucesso.", "dados": { "id": 3, "...": "..." }}
+{"sucesso": false, "status": 404, "erro": "Desafio com id 9999 não encontrado."}
+```
+
+**Códigos de erro**: `400` dados inválidos (JSON malformado, tipo errado, data fora
+do formato, campo obrigatório ausente, texto maior que a coluna, id inválido);
+`401` sem login; `403` usuário não é o criador; `404` desafio inexistente;
+`405` método não suportado na rota; `415` corpo sem `Content-Type: application/json`;
+`500` erro interno.
+
+
 ## Regras de negócio (camada Service)
 
 - **Usuário**: nome, login, senha (mínimo 6 caracteres) e perfil obrigatórios; login

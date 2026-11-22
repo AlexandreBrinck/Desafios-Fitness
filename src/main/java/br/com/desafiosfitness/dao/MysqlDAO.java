@@ -32,6 +32,10 @@ public class MysqlDAO {
         return this.banco.executarUpdate(sql, parametros);
     }
 
+    protected Long executarInsert(String sql, Object... parametros) throws SQLException {
+        return this.banco.executarInsert(sql, parametros);
+    }
+
     protected <T extends Mapeavel> T mapearSimples(ResultSet rs, Class<T> classe) {
         try {
             T objeto = classe.getDeclaredConstructor().newInstance();

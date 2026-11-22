@@ -46,11 +46,14 @@ public class DesafioDAO extends MysqlDAO {
         return null;
     }
 
+    /**
+     * Insere o desafio e preenche nele o id gerado pelo banco (AUTO_INCREMENT).
+     */
     public void inserir(Desafio desafio) {
         String sql = "INSERT INTO desafios (nome, descricao, tipo_exercicio, meta, data_inicio, data_fim, criador_id) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try {
-            super.executarUpdate(
+            Long idGerado = super.executarInsert(
                     sql,
                     desafio.getNome(),
                     desafio.getDescricao(),
@@ -59,6 +62,7 @@ public class DesafioDAO extends MysqlDAO {
                     desafio.getDataInicio(),
                     desafio.getDataFim(),
                     desafio.getCriadorId());
+            desafio.setId(idGerado);
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao inserir desafio.", e);
         }
