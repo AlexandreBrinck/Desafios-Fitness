@@ -13,6 +13,12 @@ import java.util.List;
  */
 public class DesafioService {
 
+    // Tamanhos maximos das colunas da tabela "desafios" (init.sql).
+    private static final int MAX_NOME = 150;
+    private static final int MAX_DESCRICAO = 500;
+    private static final int MAX_TIPO_EXERCICIO = 100;
+    private static final int MAX_META = 100;
+
     private final DesafioDAO desafioDAO;
 
     public DesafioService() {
@@ -33,17 +39,21 @@ public class DesafioService {
     /**
      * Regra de salvamento:
      * - nome, tipo de exercicio e data de inicio sao obrigatorios;
+     * - textos nao podem ultrapassar o tamanho das colunas do banco;
      * - data de fim (quando informada) nao pode ser anterior a data de inicio;
-     * - sem id -> cadastro novo, o criador e sempre o usuario logado;
+     * - sem id -> cadastro novo, o criador e sempre o usuario logado
+     *   (o id gerado pelo banco e preenchido no proprio objeto pelo DAO);
      * - com id -> alteracao, somente o criador original pode editar.
      */
     public void salvar(Desafio desafio, Long usuarioLogadoId) {
         if (desafio == null) {
             throw new IllegalArgumentException("Desafio é obrigatório.");
         }
+        this.validarUsuarioLogado(usuarioLogadoId);
 
         this.prepararDados(desafio);
         this.validarCamposObrigatorios(desafio);
+        this.validarTamanhos(desafio);
         this.validarDatas(desafio);
 
         if (desafio.getId() == null) {
@@ -74,6 +84,7 @@ public class DesafioService {
         if (id == null) {
             throw new IllegalArgumentException("Id é obrigatório para excluir.");
         }
+        this.validarUsuarioLogado(usuarioLogadoId);
         Desafio existente = this.desafioDAO.buscarPorId(id);
         if (existente == null) {
             throw new IllegalArgumentException("Desafio não encontrado.");
@@ -100,6 +111,25 @@ public class DesafioService {
         }
         if (desafio.getDataInicio() == null) {
             throw new IllegalArgumentException("Data de início é obrigatória.");
+        }
+    }
+
+    private void validarUsuarioLogado(Long usuarioLogadoId) {
+        if (usuarioLogadoId == null) {
+            throw new IllegalArgumentException("Usuário logado é obrigatório para esta operação.");
+        }
+    }
+
+    private void validarTamanhos(Desafio desafio) {
+        this.validarTamanho(desafio.getNome(), "Nome", MAX_NOME);
+        this.validarTamanho(desafio.getDescricao(), "Descrição", MAX_DESCRICAO);
+        this.validarTamanho(desafio.getTipoExercicio(), "Tipo de exercício", MAX_TIPO_EXERCICIO);
+        this.validarTamanho(desafio.getMeta(), "Meta", MAX_META);
+    }
+
+    private void validarTamanho(String valor, String campo, int maximo) {
+        if (valor != null && valor.length() > maximo) {
+            throw new IllegalArgumentException(campo + " deve ter no máximo " + maximo + " caracteres.");
         }
     }
 

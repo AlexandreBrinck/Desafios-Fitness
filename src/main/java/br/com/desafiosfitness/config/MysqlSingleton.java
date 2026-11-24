@@ -49,6 +49,10 @@ public class MysqlSingleton {
         for (int i = 0; i < parametros.length; i++) {
             ps.setObject(i + 1, parametros[i]);
         }
+        // Fecha o PreparedStatement automaticamente quando o DAO fechar o ResultSet
+        // (todos os DAOs usam try-with-resources), evitando acumulo de statements
+        // abertos na conexao unica.
+        ps.closeOnCompletion();
         return ps.executeQuery();
     }
 

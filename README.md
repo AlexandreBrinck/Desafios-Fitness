@@ -30,7 +30,9 @@ Permitir que usuários:
 - MySQL 8.4 (via `mysql-connector-j`)
 - Maven (empacotamento WAR)
 - HTML/CSS + um pouco de JavaScript (`confirm()` nos links de exclusão)
-- Docker / docker-compose (opcional, para subir MySQL + Tomcat)
+- Gson 2.13 (JSON da API REST)
+- Docker / docker-compose (MySQL + Tomcat)
+- Postman (coleção de testes da API em [`postman/`](postman/))
 
 ## Arquitetura
 
@@ -42,6 +44,7 @@ como mecanismo de roteamento.
 src/main/java/br/com/desafiosfitness/
 ├── config/      MysqlSingleton (conexão única com o MySQL)
 ├── controller/  Servlets (BaseServlet + um por entidade/funcionalidade)
+│   └── api/     DesafioApiServlet (API REST em JSON — Parte 2)
 ├── dao/         Acesso ao banco (MysqlDAO base + um DAO por entidade)
 ├── filter/      Filtros de servlet (codificação UTF-8 e exigência de login)
 ├── model/       Entidades (Mapeavel, Usuario, Desafio, Participacao, Progresso)
@@ -55,6 +58,8 @@ src/main/webapp/
 │   └── progresso/      lista.jsp, form.jsp
 ├── css/estilo.css        Layout
 └── index.jsp             Redireciona para /home
+
+postman/Desafios-Fitness-API.postman_collection.json   Coleção de testes da API
 ```
 
 ### Mapeamento automático (Mapeavel / mapearSimples)
@@ -136,20 +141,25 @@ A conexão é feita pelo Singleton `MysqlSingleton`
 e senha configurados como constantes no topo da classe:
 
 ```java
-URL      = jdbc:mysql://localhost:3306/desafios_fitness?...
+URL      = jdbc:mysql://mysql:3306/desafios_fitness?...
 USER     = desafios_user
 PASSWORD = desafios123
 ```
 
-Por padrão o projeto aponta para `localhost`, para rodar com um MySQL/MariaDB e um
-Tomcat instalados diretamente no Windows, sem Docker. **Se preferir rodar via Docker**
-(usando o `docker-compose.yml` incluído no projeto), troque `localhost` por `mysql`
-nessa URL antes de compilar — esse é o nome do serviço MySQL no `docker-compose.yml`.
+Por padrão o projeto aponta para o host `mysql`, que é o nome do serviço MySQL no
+`docker-compose.yml` (execução via Docker). **Para rodar com MySQL e Tomcat instalados
+diretamente no Windows, sem Docker**, troque `mysql` por `localhost` nessa URL antes de
+compilar.
+
+O site (Parte 1) e a API REST (Parte 2) usam exatamente a mesma conexão, os mesmos
+DAOs e o mesmo banco `desafios_fitness`: um desafio criado pela API aparece no site e
+vice-versa.
 
 ## Como executar
 
 ### Opção 1 — MySQL e Tomcat instalados localmente 
 
+0. Em `MysqlSingleton.java`, troque o host `mysql` por `localhost` na URL.
 1. Crie o banco rodando o script `init.sql` num MySQL/MariaDB local
    (ex.: `mysql -u root < init.sql`).
 2. Crie o usuário do banco usado pela aplicação (ou ajuste `MysqlSingleton.java` para
@@ -177,61 +187,205 @@ O `docker-compose.yml` sobe automaticamente:
 - banco `desafios_fitness`;
 - tabelas e dados iniciais através do `init.sql`.
 
+**Depois de alterar o código-fonte**, gere o WAR de novo para o Tomcat do Docker
+carregar a nova versão. Sem Maven instalado, dá para usar a própria imagem do Maven:
+
+```bash
+# Linux/macOS/Git Bash
+docker run --rm -v "$(pwd)":/app -w /app maven:3.9-eclipse-temurin-21 mvn clean package
+# PowerShell
+docker run --rm -v "${PWD}:/app" -w /app maven:3.9-eclipse-temurin-21 mvn clean package
+```
+
+O WAR sai em `deploy/desafios-fitness.war` (pasta montada no Tomcat), e o Tomcat
+reimplanta a aplicação sozinho em alguns segundos.
+
+> O `init.sql` só roda na **primeira** criação do volume do MySQL. Para recriar o
+> banco do zero (apaga os dados!), use `docker compose down -v` e depois
+> `docker compose up -d`.
+
 
 ## API REST de Desafios (Parte 2)
 
-Controller: `controller/api/DesafioApiServlet.java` (`@WebServlet("/api/desafios/*")`).
-Usa o mesmo `DesafioService` do site — sem regra de negócio no controller — e
-responde sempre em JSON (Gson). Base: `http://localhost:8080/desafios-fitness`.
+### Objetivo
 
-| Método | Rota                  | Ação           | Login | Sucesso |
-|--------|-----------------------|----------------|:-----:|:-------:|
-| GET    | `/api/desafios`       | Lista todos    |  não  |   200   |
-| GET    | `/api/desafios/{id}`  | Busca por id   |  não  |   200   |
-| POST   | `/api/desafios`       | Cadastra       |  sim  |   201   |
-| PUT    | `/api/desafios/{id}`  | Atualiza       |  sim (criador) | 200 |
-| DELETE | `/api/desafios/{id}`  | Exclui         |  sim (criador) | 200 |
+Expor o cadastro de Desafios como uma API REST em JSON, permitindo que outros
+clientes (Postman, front-ends, apps) listem, consultem, cadastrem, atualizem e
+excluam desafios **com as mesmas regras de negócio do site**. A API não tem regras
+próprias: o controller converte HTTP/JSON e delega ao mesmo `DesafioService`, que usa
+o mesmo `DesafioDAO` e o mesmo banco.
 
-**Autenticação**: a API reaproveita a sessão do site. No Postman, faça
-`POST /login` com corpo `x-www-form-urlencoded` (`login`, `senha`); o cookie
-`JSESSIONID` é guardado e enviado automaticamente nas requisições seguintes.
+```
+Postman / cliente HTTP
+   │  JSON
+   ▼
+DesafioApiServlet (/api/desafios/*)   ← controller/api — valida formato do JSON, escolhe o status HTTP
+   ▼
+DesafioService                         ← regras de negócio (as mesmas do site)
+   ▼
+DesafioDAO → MysqlDAO → MysqlSingleton ← SQL no MySQL (banco desafios_fitness)
+```
 
-**Corpo (POST/PUT)** — `Content-Type: application/json`, datas em `yyyy-MM-dd`:
+### Endpoints
+
+Base: `http://localhost:8080/desafios-fitness`
+
+| Método | Rota                 | Ação         | Login          | Sucesso |
+|--------|----------------------|--------------|----------------|:-------:|
+| GET    | `/api/desafios`      | Lista todos  | não            |   200   |
+| GET    | `/api/desafios/{id}` | Busca por id | não            |   200   |
+| POST   | `/api/desafios`      | Cadastra     | sim            |   201   |
+| PUT    | `/api/desafios/{id}` | Atualiza     | sim (criador)  |   200   |
+| DELETE | `/api/desafios/{id}` | Exclui       | sim (criador)  |   200   |
+
+**Autenticação**: a API usa a mesma sessão do site. Faça `POST /login` com corpo
+`x-www-form-urlencoded` (`login`, `senha`). A resposta é um redirecionamento 302
+para `/home` e traz o cookie `JSESSIONID`. O Postman guarda esse cookie e o envia
+automaticamente nas requisições seguintes. Sem login, POST/PUT/DELETE respondem `401`.
+
+**Campos do desafio** (JSON):
+
+| Campo           | Tipo                 | Obrigatório | Limite       |
+|-----------------|----------------------|:-----------:|--------------|
+| `nome`          | texto                | sim         | 150          |
+| `descricao`     | texto                | não         | 500          |
+| `tipoExercicio` | texto                | sim         | 100          |
+| `meta`          | texto                | não         | 100          |
+| `dataInicio`    | data `yyyy-MM-dd`    | sim         | —            |
+| `dataFim`       | data `yyyy-MM-dd`    | não         | ≥ dataInicio |
+| `id`, `criadorId` | número (só resposta) | —         | gerados pelo sistema |
+
+- O `id` é gerado pelo MySQL e devolvido no POST.
+- O `criadorId` é sempre o usuário logado e nunca é lido do corpo.
+- O PUT substitui todos os campos; opcionais omitidos ficam `null`.
+
+**Formato das respostas**: sucesso traz `sucesso`, `mensagem` (quando houver) e
+`dados`; erro traz `sucesso: false`, `status` e `erro`.
+
+| Status | Quando |
+|:------:|--------|
+| 400 | JSON malformado, campo com tipo errado, data fora do formato, campo obrigatório ausente, texto maior que o limite, data de fim anterior ao início, id inválido na URL |
+| 401 | POST/PUT/DELETE sem login |
+| 403 | PUT/DELETE de desafio criado por outro usuário |
+| 404 | desafio inexistente |
+| 405 | método não suportado na rota (ex.: DELETE sem id); traz o cabeçalho `Allow` |
+| 415 | corpo sem `Content-Type: application/json` |
+| 500 | erro interno (ex.: banco fora do ar) |
+
+### Exemplos de requisições
+
+Com `curl` (o arquivo `cookies.txt` guarda a sessão):
+
+```bash
+BASE=http://localhost:8080/desafios-fitness
+
+# Login (joao / 123456)
+curl -c cookies.txt -d "login=joao&senha=123456" $BASE/login
+
+# Listar e buscar
+curl $BASE/api/desafios
+curl $BASE/api/desafios/1
+
+# Cadastrar
+curl -b cookies.txt -X POST -H "Content-Type: application/json" \
+     -d '{"nome":"Pedalada 100km","tipoExercicio":"Ciclismo","meta":"100 km","dataInicio":"2026-12-01","dataFim":"2026-12-31"}' \
+     $BASE/api/desafios
+
+# Atualizar (troque 3 pelo id devolvido no cadastro)
+curl -b cookies.txt -X PUT -H "Content-Type: application/json" \
+     -d '{"nome":"Pedalada 150km","tipoExercicio":"Ciclismo","meta":"150 km","dataInicio":"2026-12-01","dataFim":"2026-12-31"}' \
+     $BASE/api/desafios/3
+
+# Excluir
+curl -b cookies.txt -X DELETE $BASE/api/desafios/3
+```
+
+`POST /api/desafios` → **201 Created**
 
 ```json
 {
-  "nome": "Pedalada 100km",
-  "descricao": "Acumular 100 km de bike",
-  "tipoExercicio": "Ciclismo",
-  "meta": "100 km",
-  "dataInicio": "2026-12-01",
-  "dataFim": "2026-12-31"
+  "sucesso": true,
+  "mensagem": "Desafio cadastrado com sucesso.",
+  "dados": {
+    "id": 3,
+    "nome": "Pedalada 100km",
+    "descricao": null,
+    "tipoExercicio": "Ciclismo",
+    "meta": "100 km",
+    "dataInicio": "2026-12-01",
+    "dataFim": "2026-12-31",
+    "criadorId": 2
+  }
 }
 ```
 
-O PUT substitui todos os campos (campos opcionais omitidos ficam `null`).
-O `criadorId` nunca vem do corpo: é sempre o usuário logado.
-
-**Formato das respostas**:
+`GET /api/desafios/9999` → **404 Not Found**
 
 ```json
-{"sucesso": true, "mensagem": "Desafio atualizado com sucesso.", "dados": { "id": 3, "...": "..." }}
-{"sucesso": false, "status": 404, "erro": "Desafio com id 9999 não encontrado."}
+{ "sucesso": false, "status": 404, "erro": "Desafio com id 9999 não encontrado." }
 ```
 
-**Códigos de erro**: `400` dados inválidos (JSON malformado, tipo errado, data fora
-do formato, campo obrigatório ausente, texto maior que a coluna, id inválido);
-`401` sem login; `403` usuário não é o criador; `404` desafio inexistente;
-`405` método não suportado na rota; `415` corpo sem `Content-Type: application/json`;
-`500` erro interno.
+`PUT /api/desafios/1` logado como `joao` (o desafio 1 é do `admin`) → **403 Forbidden**
+
+```json
+{ "sucesso": false, "status": 403, "erro": "Somente o criador pode editar este desafio." }
+```
+
+### Coleção do Postman
+
+Arquivo: [`postman/Desafios-Fitness-API.postman_collection.json`](postman/Desafios-Fitness-API.postman_collection.json)
+(formato Collection v2.1).
+
+**Importar**: no Postman, clique em **Import** e selecione o arquivo (ou arraste-o para
+a janela). A coleção "Desafios Fitness - API REST" aparece na barra lateral.
+
+**Variáveis da coleção** (aba *Variables*):
+
+| Variável                | Padrão                                   | Uso |
+|-------------------------|------------------------------------------|-----|
+| `baseUrl`               | `http://localhost:8080/desafios-fitness` | endereço da aplicação |
+| `login` / `senha`       | `joao` / `123456`                        | usuário do login |
+| `desafioId`             | preenchida pelo POST                     | id usado no GET/PUT/DELETE |
+| `desafioDeOutroUsuario` | `1`                                      | desafio do `admin`, para o teste 403 |
+
+**Organização**:
+
+1. **0. Autenticacao**: login (guarda o cookie de sessão).
+2. **1. CRUD de Desafios**: listar → buscar → cadastrar (salva `desafioId`) → buscar o
+   criado → atualizar → excluir → buscar o excluído (404).
+3. **2. Validacoes e erros**: 404, id inválido, campo obrigatório, data inválida,
+   datas incoerentes, JSON malformado, 415, 403, 405, logout e 401.
+
+Cada requisição tem testes automáticos (aba *Tests*) e as principais têm exemplos de
+resposta salvos (*Examples*).
+
+**Executar tudo**: com o projeto rodando, clique com o botão direito na coleção, escolha
+**Run collection** e depois **Run**. Rode na ordem, porque as requisições dependem do
+login e do `desafioId`. A coleção cria um desafio e o exclui no final, então o banco
+volta ao estado anterior.
+
+Pela linha de comando, com o [Newman](https://github.com/postmanlabs/newman):
+
+```bash
+newman run postman/Desafios-Fitness-API.postman_collection.json
+# ou, sem instalar nada (Docker):
+docker run --rm --network host -v "$(pwd)/postman":/etc/newman postman/newman:6-alpine \
+       run Desafios-Fitness-API.postman_collection.json
+```
+
+> No Docker Desktop (Windows/macOS), `--network host` pode não alcançar o
+> `localhost` da máquina. Nesse caso, remova `--network host` e acrescente ao final
+> `--env-var baseUrl=http://host.docker.internal:8080/desafios-fitness`.
 
 
 ## Regras de negócio (camada Service)
 
 - **Usuário**: nome, login, senha (mínimo 6 caracteres) e perfil obrigatórios; login
   único; autenticação por login+senha.
-- **Desafio**: nome, tipo de exercício e data de início obrigatórios; data de fim (se
-  informada) não pode ser anterior à data de início; somente o criador pode editar ou
+- **Desafio**: nome, tipo de exercício e data de início obrigatórios; textos limitados
+  ao tamanho das colunas do banco (nome 150, descrição 500, tipo de exercício e meta
+  100); data de fim (se informada) não pode ser anterior à data de início; ao
+  cadastrar, o id gerado pelo banco é devolvido no próprio objeto; somente o criador pode editar ou
   excluir; ao criar, o criador é sempre o usuário logado (nunca um valor vindo do
   formulário).
 - **Participação**: usuário e desafio precisam existir; um usuário não pode participar
@@ -281,6 +435,14 @@ O projeto foi validado de ponta a ponta em ambiente real (não apenas compilado)
    bloqueio de participação duplicada), registro/edição/exclusão de progresso com
    checagem de posse, validações de campos obrigatórios e de datas, e exclusão de
    desafio com cascade real confirmado no banco.
+4. **API REST (Parte 2)**: testada em MySQL 8.4 + Tomcat 10.1 (Docker, banco recriado
+   pelo `init.sql`). A coleção do Postman foi executada com o Newman: 19 requisições e
+   66 verificações, sem falhas.
+   - O id devolvido pelo POST confere com o gravado no MySQL.
+   - Os limites de tamanho do Service funcionam também no formulário do site, que
+     antes gerava erro 500.
+   - Uma regressão completa do site continuou funcionando: usuários, desafios,
+     participação, progresso e cascade.
 
 ## Possíveis evoluções futuras (fora do escopo da entrega)
 
